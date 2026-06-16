@@ -30,9 +30,9 @@ router.post('/search', async (req, res) => {
   }
 });
 
-router.get('/autocomplete', (req, res) => {
+router.get('/autocomplete', async (req, res) => {
   const query = String(req.query.q ?? '');
-  const results = suggestIngredients(query);
+  const results = await suggestIngredients(query);
   res.json({ results });
 });
 

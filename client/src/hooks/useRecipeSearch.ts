@@ -48,5 +48,23 @@ export function useRecipeSearch() {
     [lastParams]
   );
 
-  return { recipes, loading, error, hasSearched, appStatus, search, fetchDetail };
+  const refreshAppStatus = useCallback(async () => {
+    try {
+      const status = await fetchAppStatus();
+      setAppStatus(status);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  return {
+    recipes,
+    loading,
+    error,
+    hasSearched,
+    appStatus,
+    search,
+    fetchDetail,
+    refreshAppStatus,
+  };
 }

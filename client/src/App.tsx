@@ -2,11 +2,12 @@ import { useCallback, useState } from 'react';
 import SearchForm from './components/SearchForm';
 import ResultsList from './components/ResultsList';
 import RecipeDetailModal from './components/RecipeDetail';
+import DataModeSettings from './components/DataModeSettings';
 import { useRecipeSearch } from './hooks/useRecipeSearch';
 import type { RecipeDetail, SearchParams } from './types/recipe';
 
 export default function App() {
-  const { recipes, loading, error, hasSearched, appStatus, search, fetchDetail } =
+  const { recipes, loading, error, hasSearched, appStatus, search, fetchDetail, refreshAppStatus } =
     useRecipeSearch();
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -51,7 +52,7 @@ export default function App() {
           </p>
 
           {appStatus && (
-            <div className="mt-3 inline-flex flex-wrap items-center gap-2 text-xs">
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               <span
                 className={`px-2.5 py-1 rounded-full font-medium ${
                   appStatus.mode === 'bundled'
@@ -71,6 +72,7 @@ export default function App() {
                   {appStatus.bundledRecipeCount} curated recipes · 0 API calls
                 </span>
               )}
+              <DataModeSettings onConfigSaved={refreshAppStatus} />
             </div>
           )}
         </div>

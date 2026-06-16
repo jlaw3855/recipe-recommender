@@ -7,6 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import express from 'express';
 import cors from 'cors';
+import configRouter from './routes/config.js';
 import recipesRouter from './routes/recipes.js';
 import { getAppStatus } from './services/recipeService.js';
 
@@ -24,6 +25,7 @@ app.get('/api/status', (_req, res) => {
   res.json(getAppStatus());
 });
 
+app.use('/api/config', configRouter);
 app.use('/api/recipes', recipesRouter);
 
 app.use((_req, res) => {

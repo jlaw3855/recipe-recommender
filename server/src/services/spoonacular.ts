@@ -16,7 +16,14 @@ import {
   computeIngredientScore,
   computeMatchScore,
 } from '../scoring.js';
+import { AUTOCOMPLETE_MAX } from './cache.js';
 import { trackApiCall } from './config.js';
+
+interface SpoonacularAutocompleteItem {
+  name: string;
+  image?: string;
+  id?: number;
+}
 
 const BASE_URL = 'https://api.spoonacular.com';
 
@@ -47,6 +54,14 @@ async function spoonacularFetch<T>(path: string, params: Record<string, string>)
     throw new Error(`Spoonacular API error (${response.status}): ${body}`);
   }
   return response.json() as Promise<T>;
+}
+
+export async function autocompleteLiveIngredients(query: string): Promise<string[]> {
+  const items = await spoonacularFetch<SpoonacularAutocompleteItem[]>(
+    '/food/ingredients/autocomplete',
+    { query, number: String(AUTOCOMPLETE_MAX) }
+  );
+  return items.map((item) => item.name);
 }
 
 export async function findByIngredients(ingredients: string[]): Promise<IngredientMatch[]> {

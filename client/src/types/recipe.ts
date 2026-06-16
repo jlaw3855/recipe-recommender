@@ -51,6 +51,18 @@ export interface AppStatus {
   bundledRecipeCount?: number;
 }
 
+export interface ConfigSettings {
+  dataMode: 'bundled' | 'live';
+  resolvedMode: 'bundled' | 'live';
+  hasApiKey: boolean;
+  apiKeyHint?: string;
+}
+
+export interface ConfigUpdateRequest {
+  dataMode: 'bundled' | 'live';
+  spoonacularApiKey?: string;
+}
+
 export interface RecipeDetail extends RecipeSummary {
   summary: string;
   servings: number;

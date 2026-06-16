@@ -1,27 +1,121 @@
 import type { RecipeDetail, RecipeSummary, SearchRequest } from '../types.js';
 import { normalizeIngredient, normalizeIngredientList } from '../ingredientNormalize.js';
-import { buildSearchCacheKey, getCachedSearch, setCachedSearch } from './cache.js';
+import {
+  AUTOCOMPLETE_MAX,
+  buildSearchCacheKey,
+  findPrefixCachedAutocomplete,
+  getCachedAutocomplete,
+  getCachedSearch,
+  MIN_LOCAL_SUGGESTIONS,
+  setCachedAutocomplete,
+  setCachedSearch,
+} from './cache.js';
 import { getBundledRecipeDetail, searchBundledRecipes } from './bundledRecipes.js';
 import { loadBundledRecipes, loadCommonIngredients } from './bundledData.js';
 import { getApiUsage, getDailyQuotaLimit, getDataMode } from './config.js';
-import { getLiveRecipeDetail, searchLiveRecipes } from './spoonacular.js';
+import { autocompleteLiveIngredients, getLiveRecipeDetail, searchLiveRecipes } from './spoonacular.js';
 
-export function suggestIngredients(query: string): { name: string }[] {
-  if (query.length < 2) return [];
-
+function searchLocalIngredients(query: string): string[] {
   const lower = query.toLowerCase();
   const seen = new Set<string>();
+  const prefixMatches: string[] = [];
+  const substringMatches: string[] = [];
 
-  return loadCommonIngredients()
-    .filter((name) => name.toLowerCase().includes(lower))
-    .filter((name) => {
-      const canonical = normalizeIngredient(name);
-      if (seen.has(canonical)) return false;
-      seen.add(canonical);
-      return true;
-    })
-    .slice(0, 8)
-    .map((name) => ({ name: normalizeIngredient(name) }));
+  for (const name of loadCommonIngredients()) {
+    const nameLower = name.toLowerCase();
+    if (!nameLower.includes(lower)) continue;
+
+    const canonical = normalizeIngredient(name);
+    if (seen.has(canonical)) continue;
+    seen.add(canonical);
+
+    if (nameLower.startsWith(lower)) {
+      prefixMatches.push(canonical);
+    } else {
+      substringMatches.push(canonical);
+    }
+  }
+
+  return [...prefixMatches, ...substringMatches].slice(0, AUTOCOMPLETE_MAX);
+}
+
+function mergeAndRankSuggestions(
+  query: string,
+  local: string[],
+  remote: string[]
+): string[] {
+  const seen = new Set<string>();
+  const prefixMatches: string[] = [];
+  const otherMatches: string[] = [];
+
+  const add = (name: string) => {
+    const canonical = normalizeIngredient(name);
+    if (seen.has(canonical)) return;
+    seen.add(canonical);
+
+    const lower = canonical.toLowerCase();
+    if (lower.startsWith(query)) {
+      prefixMatches.push(canonical);
+    } else {
+      otherMatches.push(canonical);
+    }
+  };
+
+  for (const name of local) add(name);
+  for (const name of remote) add(name);
+
+  return [...prefixMatches, ...otherMatches].slice(0, AUTOCOMPLETE_MAX);
+}
+
+function toSuggestionResults(names: string[]): { name: string }[] {
+  return names.map((name) => ({ name }));
+}
+
+export async function suggestIngredients(query: string): Promise<{ name: string }[]> {
+  const normalized = query.trim().toLowerCase();
+  if (normalized.length < 2) return [];
+
+  const mode = getDataMode();
+
+  if (mode === 'bundled') {
+    return toSuggestionResults(searchLocalIngredients(normalized));
+  }
+
+  const exactCached = getCachedAutocomplete(normalized);
+  if (exactCached) {
+    return toSuggestionResults(exactCached.slice(0, AUTOCOMPLETE_MAX));
+  }
+
+  const prefixCached = findPrefixCachedAutocomplete(normalized);
+  if (prefixCached && prefixCached.length > 0) {
+    const results = prefixCached.slice(0, AUTOCOMPLETE_MAX);
+    setCachedAutocomplete(normalized, results);
+    return toSuggestionResults(results);
+  }
+
+  const localResults = searchLocalIngredients(normalized);
+
+  if (localResults.length >= MIN_LOCAL_SUGGESTIONS) {
+    setCachedAutocomplete(normalized, localResults);
+    return toSuggestionResults(localResults);
+  }
+
+  const usage = getApiUsage();
+  const limit = getDailyQuotaLimit();
+  if (usage.callsToday >= limit) {
+    setCachedAutocomplete(normalized, localResults);
+    return toSuggestionResults(localResults);
+  }
+
+  try {
+    const remoteResults = await autocompleteLiveIngredients(normalized);
+    const merged = mergeAndRankSuggestions(normalized, localResults, remoteResults);
+    setCachedAutocomplete(normalized, merged);
+    return toSuggestionResults(merged);
+  } catch {
+    setCachedAutocomplete(normalized, localResults);
+    return toSuggestionResults(localResults);
+  }
 }
 
 function withNormalizedIngredients(request: SearchRequest): SearchRequest {
