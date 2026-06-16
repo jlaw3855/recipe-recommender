@@ -9,16 +9,17 @@ import {
 
 const router = Router();
 
-router.get('/status', (_req, res) => {
-  res.json(getAppStatus());
-});
-
 router.post('/search', async (req, res) => {
   try {
     const body = req.body as SearchRequest;
 
     if (!body.ingredients?.length) {
       res.status(400).json({ error: 'At least one ingredient is required.' });
+      return;
+    }
+
+    if (body.maxReadyTime !== undefined && Number.isNaN(Number(body.maxReadyTime))) {
+      res.status(400).json({ error: 'Invalid maxReadyTime value' });
       return;
     }
 
@@ -31,9 +32,14 @@ router.post('/search', async (req, res) => {
 });
 
 router.get('/autocomplete', async (req, res) => {
-  const query = String(req.query.q ?? '');
-  const results = await suggestIngredients(query);
-  res.json({ results });
+  try {
+    const query = String(req.query.q ?? '');
+    const results = await suggestIngredients(query);
+    res.json({ results });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Autocomplete failed';
+    res.status(500).json({ error: message });
+  }
 });
 
 router.get('/:id', async (req, res) => {
@@ -54,6 +60,10 @@ router.get('/:id', async (req, res) => {
     const maxReadyTime = req.query.maxReadyTime
       ? parseInt(String(req.query.maxReadyTime), 10)
       : undefined;
+    if (maxReadyTime !== undefined && isNaN(maxReadyTime)) {
+      res.status(400).json({ error: 'Invalid maxReadyTime value' });
+      return;
+    }
     const tasteProfiles = req.query.tasteProfiles
       ? (String(req.query.tasteProfiles).split(',') as SearchRequest['tasteProfiles'])
       : [];

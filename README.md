@@ -9,7 +9,7 @@ A web app that suggests recipes based on ingredients you have on hand, plus diet
 - **Two data modes:**
   - **Bundled** — 150 curated offline recipes, zero API calls
   - **Live** — Spoonacular API for real-time search and detail
-- **In-app data mode settings** — switch between bundled and live mode from the header; live mode prompts for a Spoonacular API key and persists changes to `.env` (no server restart required)
+- **In-app data mode settings** — switch between bundled and live mode from the header; live mode prompts for a Spoonacular API key and persists changes to the project root `.env` (no server restart required)
 - **Mode-aware ingredient autocomplete:**
   - **Bundled:** suggestions from `common-ingredients.json` only
   - **Live:** local-first hybrid with prefix cache; calls Spoonacular only when local matches are insufficient
@@ -30,8 +30,16 @@ A web app that suggests recipes based on ingredients you have on hand, plus diet
 
 2. **Configure environment** (optional — you can also configure via the in-app Settings panel):
 
+   Copy `.env.example` to `.env` at the **project root**:
+
    ```bash
    cp .env.example .env
+   ```
+
+   On Windows (PowerShell):
+
+   ```powershell
+   Copy-Item .env.example .env
    ```
 
 3. **Start dev servers:**
@@ -40,7 +48,7 @@ A web app that suggests recipes based on ingredients you have on hand, plus diet
    npm run dev
    ```
 
-4. Open [http://localhost:5173](http://localhost:5173) (client proxies `/api` to the server on port 3001)
+4. Open [http://localhost:5173](http://localhost:5173). The Vite dev server proxies `/api` requests to the Express server on port `3001`.
 
 ## Data modes
 
@@ -49,9 +57,20 @@ A web app that suggests recipes based on ingredients you have on hand, plus diet
 | **Bundled** | `server/src/data/recipes.json` (150 recipes) | **0** |
 | **Live** | Spoonacular | **1 per search + 1 per recipe opened** (+ occasional autocomplete) |
 
-Use **Settings** in the app header to switch modes. Selecting live mode requires a Spoonacular API key; the key is saved to `.env` as `SPOONACULAR_API_KEY`.
+Use **Settings** in the app header to switch modes. Selecting live mode requires a Spoonacular API key; the key is saved to the project root `.env` as `SPOONACULAR_API_KEY`.
 
-Legacy `.env` value `DATA_MODE=auto` (live if key is set, otherwise bundled) is still supported when editing `.env` manually, but the settings UI exposes only **bundled** and **live**.
+Legacy `.env` value `DATA_MODE=auto` (live if a key is set, otherwise bundled) is still supported when editing `.env` manually, but the settings UI exposes only **bundled** and **live**.
+
+### Filter behavior by mode
+
+| Filter | Bundled search | Live search |
+|--------|----------------|-------------|
+| Diet | Applied | Applied after opening recipe detail |
+| Complexity | Applied | Applied after opening recipe detail |
+| Max prep time | Applied | Applied after opening recipe detail |
+| Taste profile | Used in match scoring | Used in match scoring after detail load |
+
+Live search intentionally skips hard filters on the result list to avoid extra Spoonacular API calls. Bundled mode applies all filters during search because full metadata is available offline.
 
 ## API quota optimizations
 
@@ -61,7 +80,7 @@ Designed for Spoonacular's **50 requests/day** free tier:
 |---------|----------|
 | Search | **1 call** — lightweight list from `findByIngredients`; no detail prefetch |
 | Recipe detail | **1 call on click** — cached in memory |
-| Ingredient autocomplete (live) | **Local-first** — uses `common-ingredients.json`; calls Spoonacular only when local results &lt; 3; exact + prefix query cache avoids repeat calls |
+| Ingredient autocomplete (live) | **Local-first** — uses `common-ingredients.json`; calls Spoonacular only when local results < 3; exact + prefix query cache avoids repeat calls |
 | Ingredient autocomplete (bundled) | **0 calls** — local list only |
 | Repeat search | **0 calls** — search result cache keyed by query + mode |
 
@@ -73,6 +92,7 @@ Designed for Spoonacular's **50 requests/day** free tier:
 - **Backend:** Express API on `:3001` with bundled dataset + optional Spoonacular integration
 - **Bundled mode:** Full metadata, history, and instructions in `recipes.json`; autocomplete from `common-ingredients.json`
 - **Live mode:** Search returns ingredient-match cards; full recipe loads on click; autocomplete falls back to Spoonacular for uncommon ingredients
+- **Configuration:** Server and in-app settings read and write the project root `.env` via `server/src/paths.ts` so paths stay consistent in both development (`tsx`) and production (`dist/`)
 
 ## Scripts
 
@@ -91,7 +111,8 @@ Designed for Spoonacular's **50 requests/day** free tier:
 │       ├── components/             SearchForm, IngredientInput, RecipeCard,
 │       │                           RecipeDetail, DataModeSettings, …
 │       ├── hooks/                  useRecipeSearch
-│       └── types/                  Shared TypeScript types
+│       ├── types/                  Shared TypeScript types
+│       └── utils/                  Client-side ingredient normalization
 ├── server/
 │   ├── scripts/
 │   │   ├── copy-data.mjs           Copy data files into dist/ on build
@@ -103,15 +124,22 @@ Designed for Spoonacular's **50 requests/day** free tier:
 │       ├── routes/
 │       │   ├── config.ts           GET/PATCH /api/config (data mode settings)
 │       │   └── recipes.ts          Search, detail, autocomplete
-│       └── services/
-│           ├── recipeService.ts    Unified search/detail/autocomplete facade
-│           ├── bundledRecipes.ts   Offline search logic
-│           ├── bundledData.ts      JSON data loaders
-│           ├── spoonacular.ts      Live API client
-│           ├── config.ts           Data mode, quota, settings persistence
-│           ├── envFile.ts          Read/write .env from the server
-│           └── cache.ts            Search + autocomplete caches
-├── .env.example
+│       ├── services/
+│       │   ├── recipeService.ts    Unified search/detail/autocomplete facade
+│       │   ├── bundledRecipes.ts   Offline search logic
+│       │   ├── bundledData.ts      JSON data loaders
+│       │   ├── spoonacular.ts      Live API client
+│       │   ├── config.ts           Data mode, quota, settings persistence
+│       │   ├── envFile.ts          Upsert project root .env in place
+│       │   └── cache.ts            Search + autocomplete caches
+│       ├── paths.ts                Project root and .env path resolution
+│       ├── scoring.ts              Match score and hard-filter logic
+│       ├── mappings.ts             Cuisine, diet, and taste mappings
+│       ├── ingredientNormalize.ts  Canonical ingredient matching (server)
+│       ├── constants.ts            Shared server constants
+│       └── types.ts                Shared server types
+├── .env.example                    Environment template (project root)
+├── .env                            Local config (gitignored, project root)
 └── package.json                    npm workspaces (client + server)
 ```
 
@@ -121,13 +149,17 @@ Designed for Spoonacular's **50 requests/day** free tier:
 |--------|------|-------------|
 | `GET` | `/api/health` | Health check |
 | `GET` | `/api/status` | Current mode, quota usage, bundled recipe count |
-| `GET` | `/api/config` | Data mode settings (key masked to last 4 chars) |
+| `GET` | `/api/config` | Data mode settings (API key masked to last 4 characters) |
 | `PATCH` | `/api/config` | Update `dataMode` and/or `spoonacularApiKey` |
 | `POST` | `/api/recipes/search` | Search recipes by ingredients + filters |
 | `GET` | `/api/recipes/autocomplete?q=` | Ingredient suggestions (mode-aware) |
 | `GET` | `/api/recipes/:id` | Recipe detail |
 
+Search and detail endpoints return an updated `status` object (mode, quota) alongside results.
+
 ## Environment variables
+
+All variables live in `.env` at the **project root** (not inside `server/`).
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -136,4 +168,10 @@ Designed for Spoonacular's **50 requests/day** free tier:
 | `DAILY_API_QUOTA` | `50` | Max API calls tracked per server session |
 | `PORT` | `3001` | Express server port |
 
-`.env` is gitignored. The in-app Settings panel updates `DATA_MODE` and `SPOONACULAR_API_KEY` in place.
+`.env` is gitignored. The in-app Settings panel updates `DATA_MODE` and `SPOONACULAR_API_KEY` in place, quoting values when needed for safe parsing.
+
+## Security notes
+
+- Never commit `.env` or paste real API keys into source code.
+- The config API returns only the last four characters of a saved API key as a hint.
+- `PATCH /api/config` has no authentication — intended for local development only. Do not expose the server directly to the public internet without adding auth.

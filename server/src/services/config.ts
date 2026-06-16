@@ -4,7 +4,6 @@ import {
 } from './cache.js';
 import { upsertEnvVars } from './envFile.js';
 
-export type DataMode = 'bundled' | 'live' | 'auto';
 export type ConfiguredDataMode = 'bundled' | 'live';
 
 export interface ConfigSettings {
@@ -40,14 +39,8 @@ export function hasValidApiKey(): boolean {
   return Boolean(key && key !== 'your_api_key_here');
 }
 
-export function getConfiguredDataMode(): ConfiguredDataMode {
-  const configured = (process.env.DATA_MODE ?? 'auto').toLowerCase();
-  if (configured === 'bundled') return 'bundled';
-  if (configured === 'live') return 'live';
-  return hasValidApiKey() ? 'live' : 'bundled';
-}
-
-export function getDataMode(): DataMode {
+/** Resolve DATA_MODE to an effective bundled or live mode (legacy `auto` uses key presence). */
+export function getDataMode(): ConfiguredDataMode {
   const configured = (process.env.DATA_MODE ?? 'auto').toLowerCase();
   if (configured === 'bundled') return 'bundled';
   if (configured === 'live') return 'live';
@@ -65,10 +58,10 @@ function buildApiKeyHint(): string | undefined {
 }
 
 export function getConfigSettings(): ConfigSettings {
-  const resolvedMode = getDataMode() as ConfiguredDataMode;
+  const resolvedMode = getDataMode();
 
   return {
-    dataMode: getConfiguredDataMode(),
+    dataMode: resolvedMode,
     resolvedMode,
     hasApiKey: hasValidApiKey(),
     apiKeyHint: buildApiKeyHint(),

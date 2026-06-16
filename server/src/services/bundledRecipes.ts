@@ -4,7 +4,7 @@ import { ingredientsMatch, normalizeIngredientList } from '../ingredientNormaliz
 import { computeMatchScore, passesHardFiltersGeneric } from '../scoring.js';
 import { loadBundledRecipes, type BundledRecipe } from './bundledData.js';
 
-/** Match user ingredients against a bundled recipe's pantry list. */
+// * Match user ingredients against a bundled recipe's pantry list.
 function matchBundledRecipe(
   recipe: BundledRecipe,
   userIngredients: string[]

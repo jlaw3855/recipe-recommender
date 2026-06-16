@@ -1,4 +1,4 @@
-import type { Complexity, SearchRequest, SpoonacularRecipeInfo, TasteProfile } from './types.js';
+import type { Complexity, SearchRequest, TasteProfile } from './types.js';
 import { TASTE_MAPPINGS } from './mappings.js';
 
 interface ScoringInput {
@@ -83,7 +83,7 @@ function scoreComplexity(
 function scoreTimeFit(readyInMinutes: number, maxReadyTime?: number): number {
   if (!maxReadyTime) return 100;
   if (readyInMinutes > maxReadyTime) return 0;
-  // Prefer recipes that use a reasonable portion of the available time
+  // * Prefer recipes that use a reasonable portion of the available time.
   const ratio = readyInMinutes / maxReadyTime;
   return Math.max(50, ratio * 100);
 }
@@ -130,20 +130,4 @@ export function passesHardFiltersGeneric(
   }
 
   return true;
-}
-
-/** Filter recipes that exceed max prep time or fail diet requirements. */
-export function passesHardFilters(
-  info: SpoonacularRecipeInfo,
-  complexity: Complexity,
-  request: SearchRequest
-): boolean {
-  return passesHardFiltersGeneric(
-    {
-      readyInMinutes: info.readyInMinutes,
-      complexity,
-      diets: info.diets,
-    },
-    request
-  );
 }

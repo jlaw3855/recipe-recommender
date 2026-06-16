@@ -112,7 +112,8 @@ export async function suggestIngredients(query: string): Promise<{ name: string 
     const merged = mergeAndRankSuggestions(normalized, localResults, remoteResults);
     setCachedAutocomplete(normalized, merged);
     return toSuggestionResults(merged);
-  } catch {
+  } catch (error) {
+    console.error('Remote ingredient autocomplete failed:', error);
     setCachedAutocomplete(normalized, localResults);
     return toSuggestionResults(localResults);
   }

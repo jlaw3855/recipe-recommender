@@ -13,7 +13,9 @@ export function useRecipeSearch() {
   useEffect(() => {
     fetchAppStatus()
       .then(setAppStatus)
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to fetch app status:', err);
+      });
   }, []);
 
   const search = useCallback(async (params: SearchParams) => {
@@ -52,8 +54,8 @@ export function useRecipeSearch() {
     try {
       const status = await fetchAppStatus();
       setAppStatus(status);
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Failed to refresh app status:', err);
     }
   }, []);
 

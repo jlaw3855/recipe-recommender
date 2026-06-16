@@ -31,16 +31,12 @@ export function clearSearchCache(): void {
   searchCache.clear();
 }
 
-export function getSearchCacheSize(): number {
-  return searchCache.size;
-}
-
 export function getCachedAutocomplete(query: string): string[] | undefined {
   const key = query.toLowerCase().trim();
   return autocompleteCache.get(key);
 }
 
-/** Reuse a shorter cached query when the user extends their prefix (e.g. "chi" → "chick"). */
+// * Reuse a shorter cached query when the user extends their prefix (e.g. "chi" → "chick").
 export function findPrefixCachedAutocomplete(query: string): string[] | undefined {
   const key = query.toLowerCase().trim();
   let bestResults: string[] | undefined;

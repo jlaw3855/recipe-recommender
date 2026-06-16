@@ -27,7 +27,7 @@ interface SpoonacularAutocompleteItem {
 
 const BASE_URL = 'https://api.spoonacular.com';
 
-/** In-memory cache for recipe details to reduce API quota usage. */
+// * In-memory cache for recipe details to reduce API quota usage.
 const recipeCache = new Map<number, SpoonacularRecipeInfo>();
 
 function getApiKey(): string {
@@ -50,8 +50,7 @@ async function spoonacularFetch<T>(path: string, params: Record<string, string>)
 
   const response = await fetch(url.toString());
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`Spoonacular API error (${response.status}): ${body}`);
+    throw new Error(`Spoonacular API error (${response.status})`);
   }
   return response.json() as Promise<T>;
 }
@@ -177,10 +176,6 @@ function toRecipeDetail(
 
 /** Lightweight search: one API call, no detail fetches. Results ranked by ingredient match. */
 export async function searchLiveRecipes(request: SearchRequest): Promise<RecipeSummary[]> {
-  if (!request.ingredients || request.ingredients.length === 0) {
-    throw new Error('At least one ingredient is required.');
-  }
-
   const matches = await findByIngredients(request.ingredients);
   if (matches.length === 0) return [];
 
