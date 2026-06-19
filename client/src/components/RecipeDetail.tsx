@@ -55,7 +55,10 @@ export default function RecipeDetailModal({
 
             <div className="p-6 sm:p-8 space-y-6">
               <div>
-                <h2 className="font-display text-2xl sm:text-3xl font-bold text-sage-900">
+                <h2
+                  className="font-display text-2xl sm:text-3xl font-bold text-sage-900"
+                  data-testid="recipe-detail-title"
+                >
                   {recipe.title}
                 </h2>
                 <div className="flex flex-wrap gap-2 mt-3">
@@ -123,7 +126,7 @@ export default function RecipeDetailModal({
               </section>
 
               {/* Instructions */}
-              <section>
+              <section data-testid="recipe-detail-instructions">
                 <h3 className="font-display text-lg font-bold text-sage-900 mb-3">
                   Instructions
                 </h3>

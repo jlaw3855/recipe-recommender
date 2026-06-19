@@ -101,6 +101,42 @@ Designed for Spoonacular's **50 requests/day** free tier:
 | `npm run dev` | Start client and server in development mode |
 | `npm run build` | Build both client and server for production |
 | `npm start` | Run the production server (`server/dist`) |
+| `npm test` | Run server and client unit/component tests |
+| `npm run test:server` | Run server Vitest suite only |
+| `npm run test:client` | Run client Vitest suite only |
+| `npm run test:e2e` | Run Playwright E2E tests (starts dev servers in bundled mode) |
+| `npm run test:live` | Run server live-mode tests only (mocked Spoonacular; no network) |
+
+## Testing
+
+The suite has three layers and two server-side data-mode lanes. **No test calls the real Spoonacular API.**
+
+| Layer | Scope | Mode |
+|-------|--------|------|
+| Server Vitest (`*.test.ts`) | Unit + HTTP integration | Bundled (offline dataset) |
+| Server Vitest (`*.live.test.ts`) | Live-mode paths with mocked Spoonacular | Mock live |
+| Client Vitest | Hooks, components, API helpers | Mocked `fetch` |
+| Playwright E2E | Full browser flows | Bundled only |
+
+| Command | What it runs |
+|---------|--------------|
+| `npm test` | 65 server + 20 client Vitest tests |
+| `npm run test:live` | 9 server mock-live tests only (`*.live.test.ts`) |
+| `npm run test:e2e` | 8 Playwright browser tests (ports 3011/5183) |
+
+**Integrity check** after substantive changes:
+
+```bash
+npm test && npm run build && npm run test:e2e
+```
+
+**Mock live framework** (`server/src/test/live/`): central Spoonacular mock, env/quota/cache reset helpers, and fixtures. New live tests go in `server/src/**/*.live.test.ts` and import `spoonacularMocks` / `exhaustQuota` from `server/src/test/live/`. Agent skills: `.cursor/skills/bundled-mode-testing/` and `.cursor/skills/live-mode-testing/`.
+
+**Client tests** mock `fetch` for `SearchForm`, `RecipeCard`, `IngredientInput`, `ResultsList`, and `useRecipeSearch`.
+
+**E2E tests** cover bundled badge, search, filters, empty results, autocomplete, and recipe detail.
+
+First-time E2E setup: `npx playwright install chromium`.
 
 ## Project structure
 
@@ -133,13 +169,22 @@ Designed for Spoonacular's **50 requests/day** free tier:
 │       │   ├── envFile.ts          Upsert project root .env in place
 │       │   └── cache.ts            Search + autocomplete caches
 │       ├── paths.ts                Project root and .env path resolution
+│       ├── app.ts                  Express app factory (used by tests)
 │       ├── scoring.ts              Match score and hard-filter logic
 │       ├── mappings.ts             Cuisine, diet, and taste mappings
 │       ├── ingredientNormalize.ts  Canonical ingredient matching (server)
 │       ├── constants.ts            Shared server constants
-│       └── types.ts                Shared server types
+│       ├── types.ts                Shared server types
+│       └── test/
+│           ├── setup.ts            Bundled-mode Vitest env
+│           ├── setup-live.ts       Mock-live Vitest bootstrap
+│           ├── fixtures/           Spoonacular mock fixtures
+│           └── live/               Mock-live framework (harness + mocks)
+├── .cursor/skills/                 Agent skills for test workflows
 ├── .env.example                    Environment template (project root)
 ├── .env                            Local config (gitignored, project root)
+├── e2e/                            Playwright E2E specs (bundled mode)
+├── playwright.config.ts            Playwright configuration
 └── package.json                    npm workspaces (client + server)
 ```
 

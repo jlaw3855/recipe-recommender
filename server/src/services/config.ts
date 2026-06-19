@@ -34,6 +34,12 @@ export function getApiUsage(): { callsToday: number; resetDate: string } {
   return { callsToday: apiCallsToday, resetDate: quotaResetDate };
 }
 
+/** Resets in-memory API usage counters (test-only). */
+export function resetApiUsageForTests(): void {
+  apiCallsToday = 0;
+  quotaResetDate = new Date().toDateString();
+}
+
 export function hasValidApiKey(): boolean {
   const key = process.env.SPOONACULAR_API_KEY;
   return Boolean(key && key !== 'your_api_key_here');

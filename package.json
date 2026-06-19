@@ -8,9 +8,22 @@
   "scripts": {
     "dev": "concurrently \"npm run dev -w server\" \"npm run dev -w client\"",
     "build": "npm run build -w server && npm run build -w client",
-    "start": "npm run start -w server"
+    "start": "npm run start -w server",
+    "test": "npm run test:server && npm run test:client",
+    "test:server": "npm run test -w server",
+    "test:client": "npm run test -w client",
+    "test:e2e": "playwright test",
+    "test:live": "npm run test -w server -- --project live"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "@playwright/test": "^1.50.1",
+    "concurrently": "^10.0.3"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1",
+    "shell-quote": "^1.8.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true
   }
 }

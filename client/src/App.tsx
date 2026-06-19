@@ -54,6 +54,7 @@ export default function App() {
           {appStatus && (
             <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
               <span
+                data-testid="mode-badge"
                 className={`px-2.5 py-1 rounded-full font-medium ${
                   appStatus.mode === 'bundled'
                     ? 'bg-sage-100 text-sage-700'

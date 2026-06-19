@@ -102,11 +102,15 @@ export default function IngredientInput({ ingredients, onChange }: IngredientInp
           onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
           placeholder={ingredients.length === 0 ? 'Type an ingredient and press Enter…' : 'Add more…'}
           className="flex-1 min-w-[120px] outline-none bg-transparent text-sm placeholder:text-sage-400"
+          data-testid="ingredient-input"
         />
       </div>
 
       {showSuggestions && suggestions.length > 0 && (
-        <ul className="absolute z-20 w-full mt-1 bg-white border border-sage-200 rounded-xl shadow-lg overflow-hidden">
+        <ul
+          className="absolute z-20 w-full mt-1 bg-white border border-sage-200 rounded-xl shadow-lg overflow-hidden"
+          data-testid="ingredient-suggestions"
+        >
           {suggestions.map((s) => (
             <li key={s}>
               <button

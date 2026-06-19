@@ -141,6 +141,7 @@ export default function SearchForm({ onSearch, loading }: SearchFormProps) {
       <button
         type="submit"
         disabled={loading || ingredients.length === 0}
+        data-testid="search-submit"
         className="w-full py-3.5 bg-brand-500 hover:bg-brand-600 disabled:bg-sage-300 disabled:cursor-not-allowed text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all"
       >
         {loading ? 'Searching…' : 'Find Recipes'}

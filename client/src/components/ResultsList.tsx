@@ -48,7 +48,7 @@ export default function ResultsList({
 
   if (error) {
     return (
-      <div className="text-center py-16 px-6">
+      <div className="text-center py-16 px-6" data-testid="results-error">
         <div className="text-5xl mb-4">⚠️</div>
         <h3 className="font-display text-xl font-bold text-sage-900 mb-2">
           Something went wrong
@@ -60,7 +60,7 @@ export default function ResultsList({
 
   if (!hasSearched) {
     return (
-      <div className="text-center py-20 px-6">
+      <div className="text-center py-20 px-6" data-testid="results-empty">
         <div className="text-6xl mb-6">🍳</div>
         <h3 className="font-display text-2xl font-bold text-sage-900 mb-3">
           What&apos;s in your kitchen?
@@ -90,7 +90,7 @@ export default function ResultsList({
   }
 
   return (
-    <div>
+    <div data-testid="results-list">
       <p className="text-sm text-sage-500 mb-4">
         {recipes.length} recipe{recipes.length !== 1 ? 's' : ''} found, sorted by match score
       </p>

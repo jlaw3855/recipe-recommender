@@ -17,6 +17,7 @@ export default function RecipeCard({ recipe, onClick }: RecipeCardProps) {
   return (
     <article
       onClick={onClick}
+      data-testid={`recipe-card-${recipe.id}`}
       className="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-sage-200 shadow-sm hover:shadow-md hover:border-brand-300 transition-all"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
